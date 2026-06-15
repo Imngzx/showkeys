@@ -3,18 +3,11 @@ local M = {}
 
 local api = vim.api
 local uv = vim.uv or vim.loop
-local nvim_create_buf = api.nvim_create_buf
-local nvim_open_win = api.nvim_open_win
-local nvim_set_option_value = api.nvim_set_option_value
-local nvim_create_namespace = api.nvim_create_namespace
 local schedule_wrap = vim.schedule_wrap
 
-local state = require("showkeys.state")
-local utils = require("showkeys.utils")
+local state ---@type ShowkeysState
+local utils ---@type table
 
-state.ns = nvim_create_namespace("Showkeys")
-
---- Dynamically set highlights based on current colorscheme
 local function setup_highlights()
   api.nvim_set_hl(0, "SkInactive", { default = true, link = "Visual" })
 
@@ -31,6 +24,8 @@ end
 --- Setup showkeys plugin
 ---@param opts? ShowkeysConfig
 M.setup = function(opts)
+  state = state or require("showkeys.state")
+
   state.config = vim.tbl_deep_extend("force", state.config, opts or {})
   state.excluded_modes_map = {}
   for _, mode in ipairs(state.config.excluded_modes) do
@@ -40,8 +35,15 @@ end
 
 --- Open the showkeys UI
 M.open = function()
+  state = state or require("showkeys.state")
+  utils = utils or require("showkeys.utils")
+
+  if state.ns == 0 then
+    state.ns = api.nvim_create_namespace("Showkeys")
+  end
+
   state.visible = true
-  state.buf = nvim_create_buf(false, true)
+  state.buf = api.nvim_create_buf(false, true)
   utils.gen_winconfig()
   vim.bo[state.buf].ft = "Showkeys"
 
@@ -51,8 +53,8 @@ M.open = function()
 
   state.on_key = vim.on_key(function(_, char)
     if not state.win then
-      state.win = nvim_open_win(state.buf, false, config.winopts)
-      nvim_set_option_value("winhl", config.winhl, { win = state.win })
+      state.win = api.nvim_open_win(state.buf, false, config.winopts)
+      api.nvim_set_option_value("winhl", config.winhl, { win = state.win })
     end
 
     utils.parse_key(char)
@@ -101,6 +103,8 @@ end
 
 --- Close the showkeys UI and clean up state
 M.close = function()
+  state = state or require("showkeys.state")
+
   pcall(api.nvim_del_augroup_by_name, "ShowkeysAu")
 
   if state.timer then
@@ -129,6 +133,8 @@ end
 
 --- Toggle the showkeys UI
 M.toggle = function()
+  state = state or require("showkeys.state")
+
   if state.visible then
     M.close()
   else
