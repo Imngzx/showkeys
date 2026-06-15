@@ -1,14 +1,15 @@
-local state = require "showkeys.state"
+local state = require("showkeys.state")
 
+---@return string[][]
 return function()
-  local list = state.keys
-  local list_len = #list
   local virt_txts = {}
+  local len = state.keys_len
+  local keys_txt = state.keys_txt
 
-  for i, val in ipairs(list) do
-    local hl = i == list_len and "skactive" or "skinactive"
-    table.insert(virt_txts, { " " .. val.txt .. " ", hl })
-    table.insert(virt_txts, { " " })
+  for i = 1, len do
+    local hl = (i == len) and "SkActive" or "SkInactive"
+    virt_txts[#virt_txts + 1] = { " " .. keys_txt[i] .. " ", hl }
+    virt_txts[#virt_txts + 1] = { " " }
   end
 
   return virt_txts
